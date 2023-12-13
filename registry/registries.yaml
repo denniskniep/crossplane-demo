@@ -1,0 +1,9 @@
+mirrors:
+  "registry.k3d.localhost:5000":
+    endpoint:
+      - https://registry.k3d.localhost:5000
+
+configs:
+  "registry.k3d.localhost:5000":
+    tls:
+      ca_file: "/etc/ssl/certs/self-signed-ca.crt"

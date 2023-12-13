@@ -1,0 +1,15 @@
+FROM ubuntu:22.04
+
+COPY ./certs/ /certs
+
+RUN apt-get update && apt-get -y install curl ca-certificates
+
+RUN curl -sL "https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh" | sh
+
+RUN mv crossplane /usr/bin/crossplane
+
+RUN cp /certs/self-signed-ca.crt /usr/local/share/ca-certificates/self-signed-ca.crt
+
+RUN update-ca-certificates
+
+CMD tail -f /dev/null
