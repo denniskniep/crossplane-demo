@@ -53,25 +53,6 @@ sudo docker inspect registry.k3d.localhost | jq -r '.[0].NetworkSettings.Network
 
 restart codedns pod
 
-### Push image
-```
-sudo docker tag <image>:<tag> crossplane-demo-registry.local:<port>/<image>:<tag>
-sudo docker push crossplane-demo-registry.local:<port>/<image>:<tag>
-```
-
-### Push *.xpkg file 
-
-Start container with crossplane cli + trusted self signed cert
-```
-sudo docker build -t "crossplane-cli:latest" -f ./registry/Dockerfile.crossplane-cli ./registry
-sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash
-```
-
-push file to OCI registry
-```
-crossplane xpkg push -f /files/<file> registry.k3d.localhost:5000/<name>:<tag>
-```
-
 
 ## Start and Stop
 ```
@@ -150,6 +131,14 @@ helm dependencies update
 helm install --set "server.replicaCount=1,cassandra.config.cluster_size=1,prometheus.enabled=false,grafana.enabled=false,elasticsearch.enabled=false,web.ingress.enabled=true,web.ingress.hosts[0]=temporal.k8s.localhost,server.frontend.service.type=LoadBalancer" temporaltest . --timeout 15m
 ```
 
+## Build Crossplane Temporal Provider
+```
+git clone https://github.com/denniskniep/provider-temporal.git
+make build
+```
+
+copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/*.xpkg`
+
 ## Push *.xpkg file 
 Start container with crossplane cli + trusted self signed cert
 ```
@@ -174,17 +163,4 @@ Temporal URL: http://temporal.k8s.localhost/
 Query namespaces with CLI
 ```
 temporal operator namespace list --address temporal.k8s.localhost:7233
-```
-
-## Install Crossplane Temporal Provider
-```
-git clone https://github.com/denniskniep/provider-temporal.git
-make build
-```
-
-push the created xpkg file to oci registry:
-see section `Push *.xpkg file`
-
-```
-kubectl apply -f ./k8s/crossplane/temporal
 ```
