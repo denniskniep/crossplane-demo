@@ -3,6 +3,7 @@ services:
   registry.k3d.localhost:
     container_name: registry.k3d.localhost    
     image: registry:2
+    restart: unless-stopped
     environment:
       - REGISTRY_HTTP_ADDR=0.0.0.0:5000
       - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/self-signed-ca.crt

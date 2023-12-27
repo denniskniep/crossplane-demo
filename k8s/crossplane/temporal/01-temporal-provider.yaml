@@ -18,7 +18,7 @@ kind: Provider
 metadata:
   name: provider-temporal
 spec:
-  package: registry.k3d.localhost:5000/provider-temporal:v13.0.0
+  package: registry.k3d.localhost:5000/provider-temporal:v15.0.0
   packagePullPolicy: IfNotPresent
   revisionActivationPolicy: Automatic
   runtimeConfigRef:

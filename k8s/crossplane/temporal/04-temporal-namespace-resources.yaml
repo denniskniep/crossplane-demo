@@ -5,7 +5,7 @@ metadata:
 spec:
   forProvider:
     name: "Test 1"
-    description: "Test Desc 1"
+    description: "Desc 1"
     ownerEmail: "Test@test.local"
   providerConfigRef:
     name: local-temporal-instance-config

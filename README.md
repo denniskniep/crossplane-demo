@@ -47,9 +47,11 @@ Modify coredns configmap and add entry:
 sudo docker inspect registry.k3d.localhost | jq -r '.[0].NetworkSettings.Networks."k3d-crossplane-demo".IPAddress'
 ```
 
+```
 <IpOfRegistry> registry.k3d.localhost
+```
 
-retstart codedns pod
+restart codedns pod
 
 ### Push image
 ```
@@ -69,6 +71,7 @@ push file to OCI registry
 ```
 crossplane xpkg push -f /files/<file> registry.k3d.localhost:5000/<name>:<tag>
 ```
+
 
 ## Start and Stop
 ```
@@ -156,12 +159,12 @@ sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-c
 
 push file to OCI registry (The file was built with `make build` in source repo)
 ```
-crossplane xpkg push -f /files/provider-temporal-v0.0.0-2.g3abd9d5.dirty.xpkg registry.k3d.localhost:5000/provider-temporal:v13.0.0
+crossplane xpkg push -f /files/provider-temporal.xpkg registry.k3d.localhost:5000/provider-temporal:v15.0.0
 ```
 
 ## Install Crossplane Temporal Provider
 ```
-kubectl apply -f ./k8s/crossplane/grafana
+kubectl apply -f ./k8s/crossplane/temporal
 ```
 
 ## Check
