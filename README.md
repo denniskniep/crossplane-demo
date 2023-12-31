@@ -143,9 +143,12 @@ git clone https://github.com/denniskniep/provider-temporal.git
 make build
 ```
 
-copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/provider-temporal.xpkg`
+copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/`
 ```
-cp ../provider-temporal/_output/xpkg/linux_amd64/*.xpkg registry/files/provider-temporal.xpkg
+rm -r registry/files; \
+mkdir registry/files; \
+cp ../provider-temporal/_output/version registry/files/; \
+cat ../provider-temporal/_output/version | xargs -i cp ../provider-temporal/_output/xpkg/linux_amd64/provider-temporal-{}.xpkg registry/files/
 ```
 
 ## Push *.xpkg file 
@@ -159,11 +162,15 @@ Start container with crossplane cli + trusted self signed cert
 sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash
 ```
 
-push file to OCI registry (The file was built with `make build` in source repo)
+push files to OCI registry (The file was built with `make build` in source repo)
 ```
-crossplane xpkg push -f /files/provider-temporal.xpkg registry.k3d.localhost:5000/provider-temporal:v0.0.1-dirty
+cd /files; ls *.xpkg | xargs -i crossplane xpkg push -f /files/{} registry.k3d.localhost:5000/provider-temporal:{}
 ```
 
+Update temporal-provider k8s manifest
+```
+export PROVIDER_VERSION=provider-temporal-$(cat registry/files/version).xpkg; envsubst < k8s/crossplane/temporal/01-temporal-provider.template > k8s/crossplane/temporal/01-temporal-provider.yaml
+```
 
 ## Install Crossplane Temporal Provider
 ```
