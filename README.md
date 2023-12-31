@@ -10,7 +10,9 @@
 sudo k3d cluster create crossplane-demo \
 --volume "$(pwd)/registry/registries.yaml:/etc/rancher/k3s/registries.yaml" \
 --volume "$(pwd)/registry/certs/self-signed-ca.crt:/etc/ssl/certs/self-signed-ca.crt" \
--p "8081:80@loadbalancer" // not tested yet
+-p "80:80@loadbalancer" \
+-p "443:443@loadbalancer" \
+-p "7233:7233@loadbalancer"
 
 sudo k3d kubeconfig merge crossplane-demo --kubeconfig-switch-context -o ~/.kube/config
 
@@ -42,34 +44,32 @@ Connect Cluster to selfhosted registry
 sudo docker network connect k3d-crossplane-demo registry.k3d.localhost
 ```
 
-Modify coredns configmap and add entry: 
+Get Ip of Registry
 ```
 sudo docker inspect registry.k3d.localhost | jq -r '.[0].NetworkSettings.Networks."k3d-crossplane-demo".IPAddress'
 ```
 
+Modify coredns configmap 
+```
+kubectl edit cm -n kube-system coredns
+```
+
+by adding entry: 
 ```
 <IpOfRegistry> registry.k3d.localhost
 ```
 
 restart codedns pod
-
-
-## Start and Stop
 ```
-sudo k3d cluster stop crossplane-demo
-sudo k3d cluster start crossplane-demo
+export POD=$(kubectl get pods --no-headers -o custom-columns=':metadata.name' -n kube-system | grep coredns | cat); kubectl delete pod -n kube-system  $POD
+
 ```
+
 
 # Crossplane
 https://docs.crossplane.io/latest/software/install/
 
 ## Install via Helm
-Create configmap to trust private registry with selfsigned cert
-```
-kubectl -n crossplane-system create cm ca-bundle-config \
---from-file=ca-bundle=./registry/certs/self-signed-ca.crt
-```
-
 ```
 helm repo add crossplane-stable https://charts.crossplane.io/stable
 helm repo update
@@ -80,6 +80,12 @@ helm install crossplane \
 --namespace crossplane-system \
 --create-namespace crossplane-stable/crossplane \
 --set registryCaBundleConfig.name=ca-bundle-config,registryCaBundleConfig.key=ca-bundle
+```
+
+Create configmap to trust private registry with selfsigned cert
+```
+kubectl -n crossplane-system create cm ca-bundle-config \
+--from-file=ca-bundle=./registry/certs/self-signed-ca.crt
 ```
 
 # Crossplane UI
@@ -137,19 +143,27 @@ git clone https://github.com/denniskniep/provider-temporal.git
 make build
 ```
 
-copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/*.xpkg`
+copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/provider-temporal.xpkg`
+```
+cp ../provider-temporal/_output/xpkg/linux_amd64/*.xpkg registry/files/provider-temporal.xpkg
+```
 
 ## Push *.xpkg file 
-Start container with crossplane cli + trusted self signed cert
+Build container with crossplane cli
 ```
 sudo docker build -t "crossplane-cli:latest" -f ./registry/Dockerfile.crossplane-cli ./registry
+
+
+Start container with crossplane cli + trusted self signed cert
+```
 sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash
 ```
 
 push file to OCI registry (The file was built with `make build` in source repo)
 ```
-crossplane xpkg push -f /files/provider-temporal.xpkg registry.k3d.localhost:5000/provider-temporal:v15.0.0
+crossplane xpkg push -f /files/provider-temporal.xpkg registry.k3d.localhost:5000/provider-temporal:v0.0.1-dirty
 ```
+
 
 ## Install Crossplane Temporal Provider
 ```
@@ -158,7 +172,7 @@ kubectl apply -f ./k8s/crossplane/temporal
 
 ## Check
 
-Temporal URL: http://temporal.k8s.localhost/
+Temporal URL: http://temporal.k8s.localhost/namespaces
 
 Query namespaces with CLI
 ```
