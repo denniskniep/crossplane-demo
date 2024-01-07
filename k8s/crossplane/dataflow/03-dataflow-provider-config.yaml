@@ -1,0 +1,11 @@
+apiVersion: springclouddataflow.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: local-springclouddataflow-instance-config
+spec: 
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: provider-springclouddataflow-config-creds
+      key: credentials  

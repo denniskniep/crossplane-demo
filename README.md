@@ -49,7 +49,7 @@ Get Ip of Registry
 sudo docker inspect registry.k3d.localhost | jq -r '.[0].NetworkSettings.Networks."k3d-crossplane-demo".IPAddress'
 ```
 
-Modify coredns configmap 
+Modify coredns configmap in `data.NodeHosts`
 ```
 kubectl edit cm -n kube-system coredns
 ```
@@ -126,7 +126,7 @@ kubectl apply -f ./k8s/crossplane/grafana
 Grafana URL: http://grafana.k8s.localhost/
 
 
-# Test with Temporal
+# Testing with Temporal
 ## Install Temporal via Helm
 ```
 git clone https://github.com/temporalio/helm-charts
@@ -143,19 +143,19 @@ git clone https://github.com/denniskniep/provider-temporal.git
 make build
 ```
 
-copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/`
+copy output from `/provider-temporal/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/temporal/`
 ```
-rm -r registry/files; \
-mkdir registry/files; \
-cp ../provider-temporal/_output/version registry/files/; \
-cat ../provider-temporal/_output/version | xargs -i cp ../provider-temporal/_output/xpkg/linux_amd64/provider-temporal-{}.xpkg registry/files/
+rm -r registry/files/temporal; \
+mkdir registry/files/temporal; \
+cp ../provider-temporal/_output/version registry/files/temporal/; \
+cat ../provider-temporal/_output/version | xargs -i cp ../provider-temporal/_output/xpkg/linux_amd64/provider-temporal-{}.xpkg registry/files/temporal/
 ```
 
 ## Push *.xpkg file 
 Build container with crossplane cli
 ```
 sudo docker build -t "crossplane-cli:latest" -f ./registry/Dockerfile.crossplane-cli ./registry
-
+```
 
 Start container with crossplane cli + trusted self signed cert
 ```
@@ -164,12 +164,12 @@ sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-c
 
 push files to OCI registry (The file was built with `make build` in source repo)
 ```
-cd /files; ls *.xpkg | xargs -i crossplane xpkg push -f /files/{} registry.k3d.localhost:5000/provider-temporal:{}
+cd /files/temporal; ls *.xpkg | xargs -i crossplane xpkg push -f /files/temporal/{} registry.k3d.localhost:5000/provider-temporal:{}
 ```
 
 Update temporal-provider k8s manifest
 ```
-export PROVIDER_VERSION=provider-temporal-$(cat registry/files/version).xpkg; envsubst < k8s/crossplane/temporal/01-temporal-provider.template > k8s/crossplane/temporal/01-temporal-provider.yaml
+export PROVIDER_VERSION=provider-temporal-$(cat registry/files/temporal/version).xpkg; envsubst < k8s/crossplane/temporal/01-temporal-provider.template > k8s/crossplane/temporal/01-temporal-provider.yaml
 ```
 
 ## Install Crossplane Temporal Provider
@@ -185,3 +185,56 @@ Query namespaces with CLI
 ```
 temporal operator namespace list --address temporal.k8s.localhost:7233
 ```
+
+
+# Testing with SpringCloudDataFlow
+
+## Install SpringCloudDataFlow via Helm
+```
+helm install my-release oci://registry-1.docker.io/bitnamicharts/spring-cloud-dataflow \
+--set "server.ingress.enabled=true,server.ingress.hostname=dataflow.k8s.localhost,mariadb.auth.rootPassword=SFioe7qrpD,rabbitmq.auth.password=gBxF0iFMJkX9QKL5,rabbitmq.auth.erlangCookie=VsNZEwFWPas5A9Un1EEUgqiDZ2goHVw2"
+```
+
+## Build Crossplane SpringCloudDataFlow Provider
+```
+git clone https://github.com/denniskniep/provider-spring-cloud-dataflow.git
+make build
+```
+
+copy output from `/provider-spring-cloud-dataflow/_output/xpkg/linux_amd64/*.xpkg` to `/crossplane-demo/registry/files/dataflow`
+```
+rm -r registry/files/dataflow; \
+mkdir registry/files/dataflow; \
+cp ../provider-spring-cloud-dataflow/_output/version registry/files/dataflow/; \
+cat ../provider-spring-cloud-dataflow/_output/version | xargs -i cp ../provider-spring-cloud-dataflow/_output/xpkg/linux_amd64/provider-springclouddataflow-{}.xpkg registry/files/dataflow/
+```
+
+## Push *.xpkg file 
+Build container with crossplane cli
+```
+sudo docker build -t "crossplane-cli:latest" -f ./registry/Dockerfile.crossplane-cli ./registry
+```
+
+Start container with crossplane cli + trusted self signed cert
+```
+sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash
+```
+
+push files to OCI registry (The file was built with `make build` in source repo)
+```
+cd /files/dataflow; ls *.xpkg | xargs -i crossplane xpkg push -f /files/dataflow/{} registry.k3d.localhost:5000/provider-springclouddataflow:{}
+```
+
+Update dataflow-provider k8s manifest
+```
+export PROVIDER_VERSION=provider-springclouddataflow-$(cat registry/files/dataflow/version).xpkg; envsubst < k8s/crossplane/dataflow/01-dataflow-provider.template > k8s/crossplane/dataflow/01-dataflow-provider.yaml
+```
+
+## Install Crossplane DataFlow Provider
+```
+kubectl apply -f ./k8s/crossplane/dataflow
+```
+
+## Check
+
+Dataflow URL: http://dataflow.k8s.localhost/dashboard
