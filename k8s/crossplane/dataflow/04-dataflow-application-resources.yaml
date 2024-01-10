@@ -6,8 +6,8 @@ spec:
   forProvider:
     name: "App001"
     type: "task"
-    version: "v1.0.0"
-    uri: "docker://hello-world:v1.0.0"
+    version: "3.0.0"
+    uri: "docker:springcloudtask/timestamp-task:3.0.0"
     bootVersion: "2"
     defaultVersion: true
   providerConfigRef:

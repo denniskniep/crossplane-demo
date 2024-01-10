@@ -1,0 +1,11 @@
+apiVersion: core.springclouddataflow.crossplane.io/v1alpha1
+kind: TaskDefinition
+metadata:
+  name: task-1
+spec:
+  forProvider:
+    name: "MyTask01"
+    description: "Test Task"
+    definition: "App001"
+  providerConfigRef:
+    name: local-springclouddataflow-instance-config
