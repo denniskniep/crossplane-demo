@@ -158,13 +158,9 @@ sudo docker build -t "crossplane-cli:latest" -f ./registry/Dockerfile.crossplane
 ```
 
 Start container with crossplane cli + trusted self signed cert
+and push files to OCI registry (The file was built with `make build` in source repo)
 ```
-sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash
-```
-
-push files to OCI registry (The file was built with `make build` in source repo)
-```
-cd /files/temporal; ls *.xpkg | xargs -i crossplane xpkg push -f /files/temporal/{} registry.k3d.localhost:5000/provider-temporal:{}
+sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash -c 'cd /files/temporal; ls *.xpkg | xargs -i crossplane xpkg push -f /files/temporal/{} registry.k3d.localhost:5000/provider-temporal:{}'
 ```
 
 Update temporal-provider k8s manifest
@@ -216,13 +212,9 @@ sudo docker build -t "crossplane-cli:latest" -f ./registry/Dockerfile.crossplane
 ```
 
 Start container with crossplane cli + trusted self signed cert
+and push files to OCI registry (The file was built with `make build` in source repo)
 ```
-sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash
-```
-
-push files to OCI registry (The file was built with `make build` in source repo)
-```
-cd /files/dataflow; ls *.xpkg | xargs -i crossplane xpkg push -f /files/dataflow/{} registry.k3d.localhost:5000/provider-springclouddataflow:{}
+sudo docker run --rm -it --net=host -v $(pwd)/registry/files:/files crossplane-cli:latest bash -c 'cd /files/dataflow; ls *.xpkg | xargs -i crossplane xpkg push -f /files/dataflow/{} registry.k3d.localhost:5000/provider-springclouddataflow:{}'
 ```
 
 Update dataflow-provider k8s manifest
